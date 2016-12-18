@@ -26,20 +26,28 @@ void MyrotImg(Mat src, Mat dst, int Rotdegree)
 {
 	Point center(src.cols / 2, src.rows / 2);
 	Mat rotMat = getRotationMatrix2D(center, Rotdegree, 1.0);
-	warpAffine(src, src, rotMat, src.size(), 1, 0);
+	warpAffine(src, dst, rotMat, src.size(), 1, 0);
 }
 
+void Myshift(int x_offset, int y_offset, Mat src, Mat dst)
+{
+	Point2f s[3] = { Point2f(0, 0), Point2f(1, 0), Point2f(1, 1) };
+	Point2f d[3] = { Point2f(x_offset, y_offset), Point2f(1 + x_offset, y_offset), Point2f(1 + x_offset, 1 + y_offset) };
+	Mat M(2, 3, CV_32FC1);
+	M = getAffineTransform(s, d);
+	warpAffine(src, dst, M, src.size(), 1, 0);
+}
 int main(int argc, char **argv[])
 {
 	Mat src = imread("rect.png", CV_LOAD_IMAGE_GRAYSCALE);
-	//drawLines(src, src);
+	Mat transformedSrc = Mat::zeros(src.size(), src.type());
+	Myshift(100, 100, src, transformedSrc);
 	
-	MyrotImg(src, src, 0);
 	Mat padded;
 	// Expand the image to an optimal size
-	int r = getOptimalDFTSize(src.rows);
-	int c = cvGetOptimalDFTSize(src.cols);
-	copyMakeBorder(src, padded, r - src.rows, 0, c - src.cols, 0, BORDER_CONSTANT);
+	int r = getOptimalDFTSize(transformedSrc.rows);
+	int c = cvGetOptimalDFTSize(transformedSrc.cols);
+	copyMakeBorder(transformedSrc, padded, r - transformedSrc.rows, 0, c - transformedSrc.cols, 0, BORDER_CONSTANT);
 	// Make place for both the complex and the real values
 	Mat planes[] = { Mat_<float>(padded), Mat::zeros(padded.size(), CV_32F) };
 	Mat complexSrc;
@@ -48,7 +56,7 @@ int main(int argc, char **argv[])
 	dft(complexSrc, complexSrc);
 	// Transform the real and complex values to magnitude
 	split(complexSrc, planes);
-	Mat mag(src.size(), CV_32F);
+	Mat mag(transformedSrc.size(), CV_32F);
 	magnitude(planes[0], planes[1], mag);
 	// Switch to a logarithmic scale
 	mag += Scalar::all(1);
@@ -71,7 +79,14 @@ int main(int argc, char **argv[])
 	// Normalize
 	normalize(mag, mag, 0, 1, CV_MINMAX);
 	imshow("original", src);
+	imshow("transformed", transformedSrc);
 	imshow("DFT", mag);
+	// output result
+	imwrite("result\\transformed.png", transformedSrc);
+	Mat test;
+	mag.copyTo(test);
+	mag.convertTo(test, CV_16UC1);
+	imwrite("result\\tranDFT.jpg", test);
 	waitKey(0);
 	return 0;
 }
