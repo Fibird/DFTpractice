@@ -21,21 +21,20 @@ void drawLines(Mat src, Mat dst)
 		line(src, Point(src.cols, r_offset * i), Point(c_offset * i, src.rows), Scalar(255, 255, 255), 8);
 	}
 }
+
 void MyrotImg(Mat src, Mat dst, int Rotdegree)
 {
 	Point center(src.cols / 2, src.rows / 2);
 	Mat rotMat = getRotationMatrix2D(center, Rotdegree, 1.0);
 	warpAffine(src, src, rotMat, src.size(), 1, 0);
 }
+
 int main(int argc, char **argv[])
 {
 	Mat src = imread("rect.png", CV_LOAD_IMAGE_GRAYSCALE);
 	//drawLines(src, src);
-	Point center(src.cols / 2, src.rows / 2);
-
-	Mat rotMat = getRotationMatrix2D(center, -90, 1.0);
-	warpAffine(src, src, rotMat, src.size(), 1, 0);
-
+	
+	MyrotImg(src, src, 0);
 	Mat padded;
 	// Expand the image to an optimal size
 	int r = getOptimalDFTSize(src.rows);
