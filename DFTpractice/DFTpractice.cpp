@@ -37,12 +37,25 @@ void Myshift(int x_offset, int y_offset, Mat src, Mat dst)
 	M = getAffineTransform(s, d);
 	warpAffine(src, dst, M, src.size(), 1, 0);
 }
+
+void Myscale(float Scale, Mat src, Mat dst)
+{
+	Point2f s[3] = { Point2f(src.cols, 0), Point2f(src.cols, src.rows), Point2f(0, src.rows) };
+	Point2f d[3] = { Point2f(Scale * src.cols, 0), Point2f(Scale * src.cols, Scale * src.rows), Point2f(0, Scale * src.rows) };
+	Mat M(2, 3, CV_32FC1);
+	M = getAffineTransform(s, d);
+	Mat tmp = src.clone();
+	warpAffine(src, tmp, M, src.size(), 1, 0);
+	Mat(tmp, Rect(0, 0, Scale * src.cols, Scale * src.rows)).copyTo(dst);
+}
 int main(int argc, char **argv[])
 {
 	Mat src = imread("rect.png", CV_LOAD_IMAGE_GRAYSCALE);
-	Mat transformedSrc = Mat::zeros(src.size(), src.type());
-	Myshift(100, 100, src, transformedSrc);
-	
+	float scale = 0.5;
+	Mat transformedSrc(src.cols * scale, src.rows * scale, src.type());
+	//Myshift(100, 100, src, transformedSrc);
+	Myscale(0.5, src, transformedSrc);
+	imshow("transformed", transformedSrc);
 	Mat padded;
 	// Expand the image to an optimal size
 	int r = getOptimalDFTSize(transformedSrc.rows);
@@ -79,7 +92,7 @@ int main(int argc, char **argv[])
 	// Normalize
 	normalize(mag, mag, 0, 1, CV_MINMAX);
 	imshow("original", src);
-	imshow("transformed", transformedSrc);
+	//imshow("transformed", transformedSrc);
 	imshow("DFT", mag);
 	// output result
 	imwrite("result\\transformed.png", transformedSrc);
